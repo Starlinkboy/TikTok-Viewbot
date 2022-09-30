@@ -7,310 +7,149 @@
 @time: 2024/07/29
 """
 
-import os, requests, io, time, random, bs4, sys, datetime, re, base64, urllib.parse, json, threading, cursor
+
+   
+import base64
 from pystyle import *
-from PIL import Image
+import os
+import sys
+import ssl
+import re
+import time
+import random
+import threading
+import requests
+import hashlib
+import json
 
+from urllib3.exceptions import InsecureRequestWarning
+from http import cookiejar
 
-class Main:
-    def __init__(self):
-        cursor.hide()
+class BlockCookies(cookiejar.CookiePolicy):
+    return_ok = set_ok = domain_return_ok = path_return_ok = lambda self, *args, **kwargs: False
+    netscape = True
+    rfc2965 = hide_cookie2 = False
 
-        self.blue = Col.light_blue
-        self.lblue = Colors.StaticMIX((Col.light_blue, Col.white, Col.white))
-        self.url = "https://zefoy.com/"
-        self.session = requests.session()
-        self.start = time.time()
-        self.videos = json.load(open("./config.json", "r"))["videos"]
+requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+ssl._create_default_https_context = ssl._create_unverified_context
 
-    def format(self, symbol, text):
-        return f"""                      {Col.Symbol(symbol, self.lblue, self.blue)} {self.lblue}{text}{Col.reset}"""
+r = requests.Session()
+r.cookies.set_policy(BlockCookies())
 
-    def gui(self):
-        os.system("cls" if os.name == "nt" else "clear")
-        txt = """\n██╗   ██╗██╗███████╗██╗    ██╗██████╗  ██████╗ ████████╗\n██║   ██║██║██╔════╝██║    ██║██╔══██╗██╔═══██╗╚══██╔══╝\n██║   ██║██║█████╗  ██║ █╗ ██║██████╔╝██║   ██║   ██║   \n╚██╗ ██╔╝██║██╔══╝  ██║███╗██║██╔══██╗██║   ██║   ██║   \n ╚████╔╝ ██║███████╗╚███╔███╔╝██████╔╝╚██████╔╝   ██║   \n  ╚═══╝  ╚═╝╚══════╝ ╚══╝╚══╝ ╚═════╝  ╚═════╝    ╚═╝\n                   By &! Tekky#1337\n\n\n\n\n"""
-        print(
-            Colorate.Vertical(
-                Colors.DynamicMIX((Col.light_blue, Col.cyan)), Center.XCenter(txt)
-            )
-        )
+class Gorgon:
+	def __init__(self,params:str,data:str,cookies:str,unix:int)->None:self.unix=unix;self.params=params;self.data=data;self.cookies=cookies
+	def hash(self,data:str)->str:
+		try:_hash=str(hashlib.md5(data.encode()).hexdigest())
+		except Exception:_hash=str(hashlib.md5(data).hexdigest())
+		return _hash
+	def get_base_string(self)->str:base_str=self.hash(self.params);base_str=base_str+self.hash(self.data)if self.data else base_str+str('0'*32);base_str=base_str+self.hash(self.cookies)if self.cookies else base_str+str('0'*32);return base_str
+	def get_value(self)->json:base_str=self.get_base_string();return self.encrypt(base_str)
+	def encrypt(self,data:str)->json:
+		unix=self.unix;len=20;key=[223,119,185,64,185,155,132,131,209,185,203,209,247,194,185,133,195,208,251,195];param_list=[]
+		for i in range(0,12,4):
+			temp=data[8*i:8*(i+1)]
+			for j in range(4):H=int(temp[j*2:(j+1)*2],16);param_list.append(H)
+		param_list.extend([0,6,11,28]);H=int(hex(unix),16);param_list.append((H&4278190080)>>24);param_list.append((H&16711680)>>16);param_list.append((H&65280)>>8);param_list.append((H&255)>>0);eor_result_list=[]
+		for (A,B) in zip(param_list,key):eor_result_list.append(A^B)
+		for i in range(len):C=self.reverse(eor_result_list[i]);D=eor_result_list[(i+1)%len];E=C^D;F=self.rbit_algorithm(E);H=(F^4294967295^len)&255;eor_result_list[i]=H
+		result=''
+		for param in eor_result_list:result+=self.hex_string(param)
+		return{'X-Gorgon':'0404b0d30000'+result,'X-Khronos':str(unix)}
+	def rbit_algorithm(self,num):
+		result='';tmp_string=bin(num)[2:]
+		while len(tmp_string)<8:tmp_string='0'+tmp_string
+		for i in range(0,8):result=result+tmp_string[7-i]
+		return int(result,2)
+	def hex_string(self,num):
+		tmp_string=hex(num)[2:]
+		if len(tmp_string)<2:tmp_string='0'+tmp_string
+		return tmp_string
+	def reverse(self,num):tmp_string=self.hex_string(num);return int(tmp_string[1:]+tmp_string[:1],16)
 
-    def title(self):
-        if os.system != "nt":
-            return
-
-        while True:
-
-            curr_time = str(
-                datetime.timedelta(
-                    seconds = (
-                        time.time() 
-                        - self.start
-                    )
-                )
-            ).split(".")[0]
-            try:
-                views = requests.post(
-                    url = (
-                        "https://api16-va.tiktokv.com/tiktok/v1/videos/detail/" 
-                            + "?"
-                            + "aweme_ids=%5B{video}%5D&device_type=SM-G973N&app_name=musical_ly&channel=googleplay&device_platform=android&version_code=190303&os_version=7.1.2&aid=1233".format(
-                                self.videos[0]
-                         )
-                    ),
-                    headers = {
-                        "x-gorgon": "0",
-                    },
-                ).json()["aweme_details"][0]["statistics"]["play_count"]
-
-                os.system(
-                    f"title Tekky © 2022  x  Zviews ^| Views: {views} ^| Elapsed Time: {curr_time} ^| v2.1"
-                    if os.name == "nt"
-                    else ""
-                )
-                time.sleep(0.5)
-            except:
-                os.system(
-                    f"title Tekky © 2022  x  Zviews ^| Views: ERROR ^| Elapsed Time: {curr_time} ^| v2.1"
-                    if os.name == "nt"
-                    else ""
-                )
-                pass
-
-    def solve_captcha(self, sessid):
+def send(did, iid, cdid, openudid):
+    global reqs, _lock
+    
+    for x in range(10):
         try:
-            # -- get captcha image --
-            response = self.session.get(
-                self.url + "a1ef290e2636bf553f39817628b6ca49.php",
-                headers={
-                    "origin": "https://zefoy.com",
-                    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36",
-                    "x-requested-with": "XMLHttpRequest",
-                    "cookie": f"PHPSESSID={sessid}",
-                },
-                params={
-                    "_CAPTCHA": "",
-                    "t": f"{round(random.random(), 8)} {int(time.time())}",
-                },
+            params  = f"device_id={did}&iid={iid}&device_type=SM-G973N&app_name=musically_go&host_abi=armeabi-v7a&channel=googleplay&device_platform=android&version_code=160904&device_brand=samsung&os_version=9&aid=1340"
+            payload = f"item_id={__aweme_id}&play_delta=1"
+            sig     = Gorgon(params=params, cookies=None, data=None, unix=int(time.time())).get_value()
+
+            response = requests.post(
+                url = (
+                    "https://api16-va.tiktokv.com/aweme/v1/aweme/stats/?" + params
+                ),
+                data    = payload,
+                headers = {'cookie':'sessionid=90c38a59d8076ea0fbc01c8643efbe47','x-gorgon':sig['X-Gorgon'],'x-khronos':sig['X-Khronos'],'user-agent':'okhttp/3.10.0.1'},
+                verify  = False
             )
-
-            json_data =  {
-                "requests": [{
-                    "image": {
-                        "content": str(base64.b64encode(response.content).decode())
-                    },
-                    "features": [{"type": "TEXT_DETECTION"}]
-                }]
-            }
-
-            req = requests.post(
-                url = 'https://content-vision.googleapis.com/v1/images:annotate',
-                headers = {
-                    'x-origin': 'https://explorer.apis.google.com',
-                },
-                params = {
-                    'alt': 'json',
-                    'key': 'AIzaSyAa8yy0GdcGPHdtD083HiGGx_S0vMPScDM',
-                },
-                json = json_data
-            )
-
-            captcha_answer = req.json()['responses'][0]["textAnnotations"][0]["description"]
-
-            if captcha_answer == "" or captcha_answer is None:
-                self.solve_captcha(sessid)
             
-            captcha_answer = re.compile('[^a-zA-Z]').sub('', captcha_answer).lower()
-
-                # d = enchant.Dict("en_US")
-                # if d.check(captcha_answer) == True:
-                #     pass
-                # else:
-                #     try:
-                #         captcha_answer = d.suggest(captcha_answer)[0]
-                #     except:
-                #         self.solve_captcha(sessid)
-
-            _response = self.session.post(
-                self.url,
-                data={
-                    "captcha_secure": captcha_answer,
-                    "r75619cf53f5a5d7aa6af82edfec3bf0": "",
-                },
-                headers={
-                    "cookie": f"PHPSESSID={sessid}",
-                    "origin": "https://zefoy.com",
-                    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36",
-                    "x-requested-with": "XMLHttpRequest",
-                },
-            )
-            alpha_key = re.findall('(?<=")[a-z0-9]{16}', _response.text)[0]
-            print(self.format("!", f"Solved captcha ! | {captcha_answer}"))
-
-            return alpha_key
-        except Exception as e:
-            print(self.format("!", f"Error: {e}"))
-            print(
-                self.format(
-                    "!",
-                    "Captcha Invalid | Check access to Zefoy",
-                )
-            )
-            self.solve_captcha(sessid)
-
-    def get_sessid(self):
-        sessid = self.session.get(
-            self.url,
-            headers={
-                "origin": "https://zefoy.com",
-                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36",
-                "x-requested-with": "XMLHttpRequest",
-            },
-        ).cookies.values()[0]
-        return sessid
-
-    def decrypt(self, data):
-        return base64.b64decode(urllib.parse.unquote(data[::-1])).decode()
-
-    def decrypt_timer(self, data):
-        # decrypted = base64.b64decode(urllib.parse.unquote(data[::-1])).decode()
-        if len(re.findall(" \d{3}", data)) != 0:
-            timer = re.findall(" \d{3}", data)[0]
-        else:
-            timer = data.split("= ")[1].split("\n")[0]
-
-        return int(timer)
-
-    def views_loop(self, sessid, alpha_key):
-        while True:
             try:
-                time.sleep(2)
-                aweme_id = random.choice(self.videos)
-
-                request = self.session.post(
-                    self.url + "c2VuZC9mb2xsb3dlcnNfdGlrdG9V",
-                    headers={
-                        "cookie": f"PHPSESSID={sessid}",
-                        "origin": "https://zefoy.com",
-                        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36",
-                        "x-requested-with": "XMLHttpRequest",
-                    },
-                    data={alpha_key: f"https://www.tiktok.com/@onlp/video/{aweme_id}"},
-                )
-                decryped_answer = self.decrypt(request.text)
-
-                if "This service is currently not working" in decryped_answer:
-                    print(self.format("x", "Views not available in the moment"))
-                    input()
-                    sys.exit()
-
-                elif "Server too busy" in decryped_answer:
-                    print(self.format("x", "Server busy ! (waiting 10s)"))
-                    time.sleep(10)
-                    continue
-
-                elif "function updatetimer()" in decryped_answer:
-                    print("\r", end="")
-                    timer = self.decrypt_timer(decryped_answer)
-
-                    print(self.format("@", f"Timer: {timer}     "), end="")
-                    start = time.time()
-
-                    while time.time() < start + timer:
-                        print("\r", end="")
-                        print(
-                            self.format(
-                                "@", f"Timer: {round((start + timer) - time.time())}       "
-                            ),
-                            end="",
-                        )
-                        time.sleep(1)
-
-                    print(self.format("!", f"Sending views ..."))
-                    continue
-
-                soup = bs4.BeautifulSoup(decryped_answer, "html.parser")
-                try:
-                    beta_key = soup.find("input", {"type": "text"}).get("name")
-                except:
-                    os.system("python " + sys.argv[0])
-                    sys.exit(0)
-
-                time.sleep(1)
-
-                start = time.time()
-                send_views = requests.post(
-                    self.url + "c2VuZC9mb2xsb3dlcnNfdGlrdG9V",
-                    headers={
-                        "cookie": f"PHPSESSID={sessid}",
-                        "origin": "https://zefoy.com",
-                        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36",
-                        "x-requested-with": "XMLHttpRequest",
-                    },
-                    data={beta_key: aweme_id},
-                )
-                latency = round(time.time() - start, 2)
-                if latency > 3:
-                    print(self.format("!", f"Sent views [id={aweme_id}]"))
-
-                decrypted_response = self.decrypt(send_views.text)
-
-                if "Too many requests. Please slow down." in decrypted_response:
-                    print(self.format("x", "Ratelimited"))
-                    time.sleep(120)
-                    continue
-
-                timer = self.decrypt_timer(decrypted_response)
-
-                print(self.format("@", f"Timer: {timer}    "), end="")
-                start = time.time()
-
-                while time.time() < start + timer:
-                    print("\r", end="")
-                    print(
-                        self.format(
-                            "@", f"Timer: {round((start + timer) - time.time())}     "
-                        ),
-                        end="",
-                    )
-                    time.sleep(1)
-
-                print("\r", end="")
-                print(self.format("!", f"Sending views ..."))
-
+                reqs += 1
+                _lock.acquire()
+                print(Colorate.Horizontal(Colors.green_to_white, f"+ - sent views {response.json()['log_pb']['impr_id']} {__aweme_id} {reqs}"))
+                _lock.release()
             except:
-                os.system("python " + sys.argv[0])
-                sys.exit(0)
+                continue
 
-    def main(self):
-        threading.Thread(
-            target = self.title, 
-            daemon = True
-        ).start()
-        
-        self.gui()
-        sessid: str = self.get_sessid()
-        
-        print(
-            self.format(
-                "!",
-                f"Sessid: {sessid}"
-            )
-        )
-        
-        alpha_key: str = self.solve_captcha(sessid)
-        
-        print(
-            "\n" 
-            + self.format(
-                "!",
-                f"Alpha Key: {alpha_key.upper()}"
-            )
-        )
+        except Exception as e:
+            pass
 
-        self.views_loop(sessid, alpha_key)
+def rpsm_loop():
+    global rps, rpm
+    while True:
+        initial = reqs
+        time.sleep(1.5)
+        rps = round((reqs - initial) / 1.5, 1)
+        rpm = round(rps * 60, 1)
 
+def title_loop():
+    global rps, rpm
+    while True:
+        if os.name == "nt":
+            os.system(f'title TikTok Viewbot by @xtekky ^| reqs: {reqs} rps: {rps} rpm: {rpm}')
+            time.sleep(0.1)
 
 if __name__ == "__main__":
-    Main().main()
+    os.system("cls" if os.name == "nt" else "clear"); os.system("title TikTok Viewbot by @xtekky" if os.name == "nt" else "")
+    txt = """\n\n╦  ╦╦╔═╗╦ ╦╔╗ ╔═╗╔╦╗\n╚╗╔╝║║╣ ║║║╠╩╗║ ║ ║ \n ╚╝ ╩╚═╝╚╩╝╚═╝╚═╝ ╩ \n"""
+    print(
+        Colorate.Vertical(
+            Colors.DynamicMIX((Col.light_blue, Col.purple)), Center.XCenter(txt)
+        )
+    )
+    
+    try:
+        link = str(Write.Input("\n\n            ? - Video Link > ", Colors.yellow_to_red, interval=0.0001))
+        __aweme_id = str(
+            re.findall(r"(\d{18,19})", link)[0]
+            if len(re.findall(r"(\d{18,19})", link)) == 1
+            else re.findall(
+                r"(\d{18,19})",
+                requests.head(link, allow_redirects=True, timeout=5).url
+            )[0]
+        )
+    except:
+        os.system("cls" if os.name == "nt" else "clear")
+        input(Col.red + "x - Invalid link, try inputting video id only" + Col.reset)
+        sys.exit(0)
+    
+    os.system("cls" if os.name == "nt" else "clear")
+    print("loading...")
+    
+    _lock = threading.Lock()
 
+    reqs = 0
+    rpm = 0
+    rps = 0
+    
+    threading.Thread(target=rpsm_loop).start()
+    threading.Thread(target=title_loop).start()
+
+    devices = open('devices.txt', 'r').read().splitlines()
+    while True:
+        device = random.choice(devices)
+
+        if eval(base64.b64decode("dGhyZWFkaW5nLmFjdGl2ZV9jb3VudCgpIDwgMTAwICMgZG9uJ3QgY2hhbmdlIGNvdW50IG9yIHUgd2lsbCBraWxsIGRldmljZXMgYW5kIHJ1aW4gZnVuIGZvciBvdGhlcnM=")):
+            did, iid, cdid, openudid = device.split(':')
+            eval(base64.b64decode('dGhyZWFkaW5nLlRocmVhZCh0YXJnZXQ9c2VuZCxhcmdzPVtkaWQsaWlkLGNkaWQsb3BlbnVkaWRdKS5zdGFydCgp'))
